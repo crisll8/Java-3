@@ -1,51 +1,56 @@
 function convertir() {
-    let acciónHavanna = 6180;
-    let acciónBBVA = 3880;
+    const precios = { havanna: 6180, bbva: 3880 };
     let todos = JSON.parse(localStorage.getItem("todos")) || [];
-  
-    let contador = 1;
-    let addTodoButton = document.getElementById("btn-add");
-    let todosList = document.getElementById("todo-list"); 
-    
-    let addTodo = () => {
-      let todoText = prompt("Ingrese su DNI para realizar una nueva compra/venta");
-      let todo = { id: contador, text: todoText, completed: false };
-      todos.push(todo);
-    
-      contador++;
-    
-      localStorage.setItem("todos", JSON.stringify(todos));
-    };
-    addTodoButton.addEventListener("click", addTodo);
-   
-     let cambio = prompt(
-      'Bienvenido al sitio web de cálculo de cantidad de pesos en sus acciones, elija la acción con la que desea operar "havanna" - "bbva"'
-    );
-  
-    while (cambio != "havanna" && cambio != "bbva") {
-      alert("ingrese correctamente el nombre de la acción: havanna o bbva");
-      cambio = prompt(
-        'Bienvenido al sitio web de cálculo de cantidad de pesos en sus acciones, elija la acción con la que desea operar "havanna" - "bbva"'
-      );
-    }
-  
-    if (cambio == "havanna") {
-      let monto = prompt("ingrese la cantidad de acciones que desea calcular");
-      let conversion = `${monto * acciónHavanna}`;
-      alert(
-        `el total de sus acciones al precio de hoy es de $${conversion} pesos argentinos`
-      );
-    }
-  
-    if (cambio == "bbva") {
-      let monto = prompt("ingrese la cantidad de acciones que desea calcular");
-      let conversion = `${monto * acciónBBVA}`;
-      alert(
-        `el total de sus acciones al precio de hoy es de $${conversion} pesos argentinos`
-      );
-    }
-  
-    alert("¡Le agradecemos por su visita, esperamos que vuelva pronto!");
-  }
-  convertir();
-  
+    let contador = todos.length + 1;
+
+    document.getElementById("btn-add").addEventListener("click", async () => {
+        const { value: dni } = await Swal.fire({
+            title: 'Ingrese su DNI',
+            input: 'text',
+            inputPlaceholder: 'Ingrese su DNI para realizar una nueva compra/venta',
+            showCancelButton: true,
+            inputValidator: value => !value && '¡Debes ingresar un DNI!'
+        });
+
+        if (!dni) return;
+
+        let todo = { id: contador, text: dni, completed: false };
+        todos.push(todo);
+        localStorage.setItem("todos", JSON.stringify(todos));
+        contador++;
+
+        const { value: acciónSeleccionada } = await Swal.fire({
+            title: 'Seleccione una acción',
+            input: 'radio',
+            inputOptions: {
+                havanna: 'Havanna',
+                bbva: 'BBVA'
+            },
+            inputValidator: value => !value && '¡Debes seleccionar una acción!'
+        });
+
+        if (!acciónSeleccionada) return;
+
+        const { value: cantidad } = await Swal.fire({
+            title: `Ingrese la cantidad de acciones (${acciónSeleccionada.toUpperCase()})`,
+            input: 'number',
+            inputPlaceholder: 'Cantidad de acciones',
+            inputValidator: value => {
+                if (!value) return '¡Debes ingresar una cantidad!';
+                if (value <= 0) return 'La cantidad debe ser mayor a cero';
+            }
+        });
+
+        if (!cantidad) return;
+
+        const total = cantidad * precios[acciónSeleccionada];
+        
+        Swal.fire({
+            title: 'Resultado',
+            text: `El total de sus acciones al precio de hoy es de $${total} pesos argentinos`,
+            icon: 'success'
+        });
+    });
+}
+
+convertir();
